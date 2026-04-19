@@ -19,6 +19,7 @@
         .container { width: 100%; max-width: 400px; }
         .center { text-align: center; }
         
+        /* イラストエリア */
         .char-box { 
             width: 130px; height: 130px; margin: 0 auto 15px; 
             border-radius: 50%; background-color: #fff; 
@@ -35,9 +36,27 @@
             color: #2e7d32; font-size: 11px; border-radius: 20px; font-weight: bold; margin-bottom: 24px; 
         }
         
+        /* タイマー表示エリア */
+        .timer-display {
+            background-color: #8d6e63;
+            color: white;
+            border-radius: 20px;
+            padding: 15px;
+            margin-bottom: 20px;
+            text-align: center;
+            display: none; /* 通常は非表示 */
+            box-shadow: 0 4px 12px rgba(141, 110, 99, 0.3);
+            animation: slideDown 0.3s ease;
+        }
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+        .timer-label { font-size: 12px; font-weight: bold; margin-bottom: 5px; opacity: 0.9; }
+        .timer-time { font-size: 32px; font-weight: bold; font-variant-numeric: tabular-nums; }
+
+        /* チケット本体 */
         .ticket { 
             background: #ffffff; border: 2px dashed #8d6e63; border-radius: 28px; 
             padding: 24px; box-shadow: 0 10px 20px rgba(141, 110, 99, 0.1); 
+            position: relative;
         }
         .ticket-row { 
             display: flex; justify-content: space-between; align-items: flex-end; 
@@ -47,6 +66,7 @@
         .num-big { font-size: 48px; font-weight: bold; color: #8d6e63; line-height: 1; }
         .price-text { font-size: 22px; font-weight: bold; color: #795548; }
         
+        /* スタンプカード */
         .grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 24px; }
         .slot { 
             aspect-ratio: 1; border: 2px dashed #e0d7d3; border-radius: 50%; 
@@ -58,6 +78,7 @@
             transform: scale(0.9) rotate(-8deg); box-shadow: 0 4px 8px rgba(0,0,0,0.1); 
         }
         
+        /* ボタン */
         .btn-use { 
             width: 100%; padding: 18px; border-radius: 20px; border: none; 
             background-color: #8d6e63; color: white; font-size: 18px; font-weight: bold; 
@@ -65,6 +86,17 @@
         }
         .btn-use:active { transform: scale(0.97); }
         .btn-use:disabled { background-color: #d7ccc8; cursor: not-allowed; }
+        
+        /* 補充エリア */
+        .reload-box { 
+            margin-top: 20px; background: #fff; border-radius: 20px; 
+            padding: 15px; border: 1px solid #ffcdd2; display: none; 
+        }
+        .reload-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .btn-pay { 
+            width: 100%; padding: 14px; background-color: #ff0033; color: white; 
+            border: none; border-radius: 14px; font-weight: bold; font-size: 15px; 
+        }
         
         .footer { font-size: 11px; color: #bcaaa4; text-align: center; margin-top: 20px; }
         .toast { 
@@ -90,6 +122,12 @@
             <div class="tag">有効期限なし</div>
         </div>
 
+        <!-- タイマー表示 -->
+        <div id="timer-box" class="timer-display">
+            <div class="timer-label">至福のマッサージ中...</div>
+            <div id="timer-text" class="timer-time">10:00</div>
+        </div>
+
         <div class="ticket">
             <div class="ticket-row">
                 <div>
@@ -104,16 +142,16 @@
 
             <div class="grid" id="grid"></div>
 
-            <button id="btn" class="btn-use" onclick="doUse()">チケットを1枚使う</button>
+            <button id="btn" class="btn-use" onclick="doUse()">チケットを1枚使う (10分)</button>
             <p class="footer">お疲れ様ですも。ゆっくり休んでくださいね。</p>
         </div>
 
-        <div id="reload" style="margin-top:20px; background:#fff; border-radius:20px; padding:15px; border:1px solid #ffcdd2; display:none;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+        <div id="reload" class="reload-box">
+            <div class="reload-row">
                 <span style="font-weight:bold">10枚補充する</span>
                 <span style="color:#d32f2f; font-weight:bold">1セット</span>
             </div>
-            <button style="width:100%; padding:14px; background:#ff0033; color:white; border:none; border-radius:14px; font-weight:bold;" onclick="doPay()">アプリで補充する</button>
+            <button class="btn-pay" onclick="doPay()">アプリで補充する</button>
         </div>
 
         <button class="reset-btn" onclick="doReset()">データをリセット</button>
@@ -122,9 +160,11 @@
     <div id="tst" class="toast"></div>
 
     <script>
-        const K_CNT = 'maru_v5_c'; 
-        const K_IMG = 'maru_v5_i';
+        const K_CNT = 'maru_v6_c'; 
+        const K_IMG = 'maru_v6_i';
+        const K_TMR = 'maru_v6_t'; // 終了時刻保存用
         let rem = 10;
+        let timerInterval = null;
 
         function startup() {
             const c = localStorage.getItem(K_CNT);
@@ -136,6 +176,7 @@
                 document.getElementById('char-txt').style.display = 'none';
             }
             draw();
+            checkTimer(); // ページを開いたときにタイマーが動いているか確認
         }
 
         function draw() {
@@ -159,7 +200,7 @@
                 b.disabled = true; b.innerText = '終了しました';
                 r.style.display = 'block';
             } else {
-                b.disabled = false; b.innerText = 'チケットを1枚使う';
+                b.disabled = false; b.innerText = 'チケットを1枚使う (10分)';
                 r.style.display = 'none';
             }
         }
@@ -167,8 +208,43 @@
         function doUse() {
             if (rem > 0) {
                 rem--; localStorage.setItem(K_CNT, rem);
-                msg('マッサージ開始ですも！'); draw();
+                
+                // 10分後の時刻を記録 (10 * 60 * 1000 ミリ秒)
+                const endTime = Date.now() + (10 * 60 * 1000);
+                localStorage.setItem(K_TMR, endTime);
+                
+                msg('マッサージ開始！10分測りますも！');
+                draw();
+                checkTimer();
             }
+        }
+
+        function checkTimer() {
+            if (timerInterval) clearInterval(timerInterval);
+            
+            const endTime = localStorage.getItem(K_TMR);
+            if (!endTime) return;
+
+            const timerBox = document.getElementById('timer-box');
+            const timerText = document.getElementById('timer-text');
+
+            timerInterval = setInterval(() => {
+                const now = Date.now();
+                const diff = endTime - now;
+
+                if (diff <= 0) {
+                    clearInterval(timerInterval);
+                    localStorage.removeItem(K_TMR);
+                    timerBox.style.display = 'none';
+                    msg('10分経ちました。お疲れ様でした！');
+                    return;
+                }
+
+                timerBox.style.display = 'block';
+                const mins = Math.floor(diff / 1000 / 60);
+                const secs = Math.floor((diff / 1000) % 60);
+                timerText.innerText = `${mins}:${secs.toString().padStart(2, '0')}`;
+            }, 1000);
         }
 
         function hdlImg(input) {
@@ -179,14 +255,10 @@
                 const img = new Image();
                 img.onload = () => {
                     const canvas = document.createElement('canvas');
-                    let width = img.width;
-                    let height = img.height;
+                    let width = img.width; let height = img.height;
                     const max = 400; 
-                    if (width > height) {
-                        if (width > max) { height *= max / width; width = max; }
-                    } else {
-                        if (height > max) { width *= max / height; height = max; }
-                    }
+                    if (width > height) { if (width > max) { height *= max / width; width = max; } }
+                    else { if (height > max) { width *= max / height; height = max; } }
                     canvas.width = width; canvas.height = height;
                     const ctx = canvas.getContext('2d');
                     ctx.drawImage(img, 0, 0, width, height);
@@ -197,9 +269,7 @@
                         v.src = dataUrl; v.style.display = 'block';
                         document.getElementById('char-txt').style.display = 'none';
                         msg('イラストを設定しました');
-                    } catch (err) {
-                        msg('保存に失敗しました。別の写真でお試しください');
-                    }
+                    } catch (err) { msg('保存に失敗しました'); }
                 };
                 img.src = e.target.result;
             };
@@ -221,11 +291,11 @@
         function msg(t) {
             const el = document.getElementById('tst');
             el.innerText = t; el.classList.add('on');
-            setTimeout(() => el.classList.remove('on'), 2500);
+            setTimeout(() => el.classList.remove('on'), 3000);
         }
 
         function doReset() {
-            if (confirm('データをすべて消去しますか？')) {
+            if (confirm('すべてのデータを消去しますか？')) {
                 localStorage.clear(); location.reload();
             }
         }
@@ -234,3 +304,5 @@
     </script>
 </body>
 </html>
+
+```
