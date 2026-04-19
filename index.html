@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>まるくしゃマッサージ回数券</title>
     <style>
-        /* 外部ファイルを一切読み込まない、エラー知らずの専用デザイン */
         * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
         body { 
             font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "Yu Gothic", sans-serif; 
@@ -20,24 +19,22 @@
         .container { width: 100%; max-width: 400px; }
         .center { text-align: center; }
         
-        /* イラストエリア */
         .char-box { 
-            width: 120px; height: 120px; margin: 0 auto 15px; 
+            width: 130px; height: 130px; margin: 0 auto 15px; 
             border-radius: 50%; background-color: #fff; 
             border: 3px solid #e7d8c9; display: flex; align-items: center; 
             justify-content: center; overflow: hidden; cursor: pointer; position: relative;
             box-shadow: 0 4px 10px rgba(0,0,0,0.05);
         }
-        .char-img { width: 100%; height: 100%; object-fit: contain; }
-        .char-msg { font-size: 10px; color: #bcaaa4; text-align: center; padding: 10px; line-height: 1.4; }
+        .char-img { width: 100%; height: 100%; object-fit: cover; }
+        .char-msg { font-size: 11px; color: #bcaaa4; text-align: center; padding: 10px; line-height: 1.4; pointer-events: none; }
         
-        h1 { font-size: 22px; font-weight: bold; margin-bottom: 4px; }
+        h1 { font-size: 24px; font-weight: bold; margin-bottom: 6px; color: #5d4037; }
         .tag { 
-            display: inline-block; padding: 4px 12px; background-color: #e8f5e9; 
-            color: #2e7d32; font-size: 10px; border-radius: 20px; font-weight: bold; margin-bottom: 24px; 
+            display: inline-block; padding: 4px 14px; background-color: #e8f5e9; 
+            color: #2e7d32; font-size: 11px; border-radius: 20px; font-weight: bold; margin-bottom: 24px; 
         }
         
-        /* チケット本体 */
         .ticket { 
             background: #ffffff; border: 2px dashed #8d6e63; border-radius: 28px; 
             padding: 24px; box-shadow: 0 10px 20px rgba(141, 110, 99, 0.1); 
@@ -46,11 +43,10 @@
             display: flex; justify-content: space-between; align-items: flex-end; 
             border-bottom: 1px solid #f3f0ee; padding-bottom: 12px; margin-bottom: 24px; 
         }
-        .label { font-size: 10px; color: #a1887f; text-transform: uppercase; }
-        .num-big { font-size: 42px; font-weight: bold; color: #8d6e63; line-height: 1; }
-        .price-text { font-size: 20px; font-weight: bold; color: #795548; }
+        .label { font-size: 11px; color: #a1887f; text-transform: uppercase; letter-spacing: 0.5px; }
+        .num-big { font-size: 48px; font-weight: bold; color: #8d6e63; line-height: 1; }
+        .price-text { font-size: 22px; font-weight: bold; color: #795548; }
         
-        /* スタンプカード */
         .grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 24px; }
         .slot { 
             aspect-ratio: 1; border: 2px dashed #e0d7d3; border-radius: 50%; 
@@ -59,49 +55,36 @@
         }
         .slot-done { 
             background-color: #8d6e63; border: 2px solid #8d6e63; color: #fff; 
-            transform: scale(0.9) rotate(-10deg); box-shadow: 0 4px 8px rgba(0,0,0,0.1); 
+            transform: scale(0.9) rotate(-8deg); box-shadow: 0 4px 8px rgba(0,0,0,0.1); 
         }
         
-        /* ボタン */
         .btn-use { 
             width: 100%; padding: 18px; border-radius: 20px; border: none; 
-            background-color: #8d6e63; color: white; font-size: 17px; font-weight: bold; 
+            background-color: #8d6e63; color: white; font-size: 18px; font-weight: bold; 
             box-shadow: 0 6px 15px rgba(141, 110, 99, 0.2); cursor: pointer; 
         }
         .btn-use:active { transform: scale(0.97); }
         .btn-use:disabled { background-color: #d7ccc8; cursor: not-allowed; }
         
-        /* 補充エリア */
-        .reload-box { 
-            margin-top: 20px; background: #fff; border-radius: 20px; 
-            padding: 15px; border: 1px solid #ffcdd2; display: none; 
-        }
-        .reload-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-        .btn-pay { 
-            width: 100%; padding: 14px; background-color: #ff0033; color: white; 
-            border: none; border-radius: 14px; font-weight: bold; font-size: 15px; 
-        }
-        
-        /* その他 */
-        .footer { font-size: 10px; color: #bcaaa4; text-align: center; margin-top: 20px; }
+        .footer { font-size: 11px; color: #bcaaa4; text-align: center; margin-top: 20px; }
         .toast { 
             position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%); background: #3e2723; color: white; 
             padding: 12px 24px; border-radius: 50px; font-size: 13px; font-weight: bold; 
             opacity: 0; transition: 0.3s; pointer-events: none; z-index: 100;
         }
         .toast.on { opacity: 1; transform: translateX(-50%) translateY(-10px); }
-        .reset-btn { margin-top: 40px; font-size: 10px; color: #d7ccc8; text-decoration: underline; background: none; border: none; }
+        .reset-btn { margin-top: 50px; font-size: 11px; color: #d7ccc8; text-decoration: underline; background: none; border: none; }
     </style>
 </head>
 <body>
 
     <div class="container">
         <div class="center">
-            <div class="char-box" onclick="document.getElementById('file-in').click()">
+            <label for="file-in" class="char-box">
                 <img id="char-view" class="char-img" style="display:none">
                 <div id="char-txt" class="char-msg">タップして<br>イラストを選択</div>
-            </div>
-            <input type="file" id="file-in" accept="image/*" style="display:none" onchange="hdlImg(this)">
+                <input type="file" id="file-in" accept="image/*" style="display:none" onchange="hdlImg(this)">
+            </label>
             
             <h1>まるくしゃマッサージ</h1>
             <div class="tag">有効期限なし</div>
@@ -110,11 +93,11 @@
         <div class="ticket">
             <div class="ticket-row">
                 <div>
-                    <span class="label">Remaining</span><br>
-                    <span id="cnt" class="num-big">10</span><span style="font-weight:bold">枚</span>
+                    <span class="label">REMAINING</span><br>
+                    <span id="cnt" class="num-big">10</span><span style="font-weight:bold; color:#8d6e63;">枚</span>
                 </div>
                 <div style="text-align:right">
-                    <span class="label">Amount</span><br>
+                    <span class="label">AMOUNT</span><br>
                     <span class="price-text">1セット</span>
                 </div>
             </div>
@@ -125,22 +108,22 @@
             <p class="footer">お疲れ様ですも。ゆっくり休んでくださいね。</p>
         </div>
 
-        <div id="reload" class="reload-box">
-            <div class="reload-row">
+        <div id="reload" style="margin-top:20px; background:#fff; border-radius:20px; padding:15px; border:1px solid #ffcdd2; display:none;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
                 <span style="font-weight:bold">10枚補充する</span>
                 <span style="color:#d32f2f; font-weight:bold">1セット</span>
             </div>
-            <button class="btn-pay" onclick="doPay()">アプリで補充する</button>
+            <button style="width:100%; padding:14px; background:#ff0033; color:white; border:none; border-radius:14px; font-weight:bold;" onclick="doPay()">アプリで補充する</button>
         </div>
 
-        <button class="reset-btn" onclick="doReset()">リセット</button>
+        <button class="reset-btn" onclick="doReset()">データをリセット</button>
     </div>
 
     <div id="tst" class="toast"></div>
 
     <script>
-        const K_CNT = 'maru_v3_c';
-        const K_IMG = 'maru_v3_i';
+        const K_CNT = 'maru_v5_c'; 
+        const K_IMG = 'maru_v5_i';
         let rem = 10;
 
         function startup() {
@@ -190,18 +173,37 @@
 
         function hdlImg(input) {
             const f = input.files[0];
-            if (f) {
-                const r = new FileReader();
-                r.onload = (e) => {
-                    const d = e.target.result;
-                    localStorage.setItem(K_IMG, d);
-                    const v = document.getElementById('char-view');
-                    v.src = d; v.style.display = 'block';
-                    document.getElementById('char-txt').style.display = 'none';
-                    msg('イラストを設定しました');
+            if (!f) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    let width = img.width;
+                    let height = img.height;
+                    const max = 400; 
+                    if (width > height) {
+                        if (width > max) { height *= max / width; width = max; }
+                    } else {
+                        if (height > max) { width *= max / height; height = max; }
+                    }
+                    canvas.width = width; canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+                    const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+                    try {
+                        localStorage.setItem(K_IMG, dataUrl);
+                        const v = document.getElementById('char-view');
+                        v.src = dataUrl; v.style.display = 'block';
+                        document.getElementById('char-txt').style.display = 'none';
+                        msg('イラストを設定しました');
+                    } catch (err) {
+                        msg('保存に失敗しました。別の写真でお試しください');
+                    }
                 };
-                reader.readAsDataURL(f);
-            }
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(f);
         }
 
         function doPay() {
@@ -219,11 +221,11 @@
         function msg(t) {
             const el = document.getElementById('tst');
             el.innerText = t; el.classList.add('on');
-            setTimeout(() => el.classList.remove('on'), 2000);
+            setTimeout(() => el.classList.remove('on'), 2500);
         }
 
         function doReset() {
-            if (confirm('リセットしますか？')) {
+            if (confirm('データをすべて消去しますか？')) {
                 localStorage.clear(); location.reload();
             }
         }
