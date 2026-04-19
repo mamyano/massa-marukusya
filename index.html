@@ -21,7 +21,7 @@
         
         /* イラストエリア */
         .char-box { 
-            width: 130px; height: 130px; margin: 0 auto 15px; 
+            width: 140px; height: 140px; margin: 0 auto 15px; 
             border-radius: 50%; background-color: #fff; 
             border: 3px solid #e7d8c9; display: flex; align-items: center; 
             justify-content: center; overflow: hidden; cursor: pointer; position: relative;
@@ -33,30 +33,39 @@
         h1 { font-size: 24px; font-weight: bold; margin-bottom: 6px; color: #5d4037; }
         .tag { 
             display: inline-block; padding: 4px 14px; background-color: #e8f5e9; 
-            color: #2e7d32; font-size: 11px; border-radius: 20px; font-weight: bold; margin-bottom: 24px; 
+            color: #2e7d32; font-size: 11px; border-radius: 20px; font-weight: bold; margin-bottom: 20px; 
         }
         
         /* タイマー表示エリア */
         .timer-display {
             background-color: #8d6e63;
             color: white;
-            border-radius: 20px;
-            padding: 15px;
+            border-radius: 24px;
+            padding: 20px;
             margin-bottom: 20px;
             text-align: center;
-            display: none; /* 通常は非表示 */
-            box-shadow: 0 4px 12px rgba(141, 110, 99, 0.3);
+            display: none; 
+            box-shadow: 0 6px 15px rgba(141, 110, 99, 0.3);
             animation: slideDown 0.3s ease;
         }
         @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
-        .timer-label { font-size: 12px; font-weight: bold; margin-bottom: 5px; opacity: 0.9; }
-        .timer-time { font-size: 32px; font-weight: bold; font-variant-numeric: tabular-nums; }
+        @keyframes blink { 0% { background-color: #8d6e63; } 50% { background-color: #ff5252; } 100% { background-color: #8d6e63; } }
+        .timer-alert { animation: blink 0.5s infinite; }
+        
+        .timer-label { font-size: 12px; font-weight: bold; margin-bottom: 8px; opacity: 0.9; }
+        .timer-time { font-size: 42px; font-weight: bold; font-variant-numeric: tabular-nums; margin-bottom: 12px; }
+        
+        .timer-controls { display: flex; gap: 10px; justify-content: center; }
+        .btn-mini { 
+            background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4);
+            color: white; padding: 8px 16px; border-radius: 12px; font-size: 12px; font-weight: bold; cursor: pointer;
+        }
+        .btn-mini:active { background: rgba(255,255,255,0.4); }
 
         /* チケット本体 */
         .ticket { 
             background: #ffffff; border: 2px dashed #8d6e63; border-radius: 28px; 
             padding: 24px; box-shadow: 0 10px 20px rgba(141, 110, 99, 0.1); 
-            position: relative;
         }
         .ticket-row { 
             display: flex; justify-content: space-between; align-items: flex-end; 
@@ -66,7 +75,6 @@
         .num-big { font-size: 48px; font-weight: bold; color: #8d6e63; line-height: 1; }
         .price-text { font-size: 22px; font-weight: bold; color: #795548; }
         
-        /* スタンプカード */
         .grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 24px; }
         .slot { 
             aspect-ratio: 1; border: 2px dashed #e0d7d3; border-radius: 50%; 
@@ -78,7 +86,6 @@
             transform: scale(0.9) rotate(-8deg); box-shadow: 0 4px 8px rgba(0,0,0,0.1); 
         }
         
-        /* ボタン */
         .btn-use { 
             width: 100%; padding: 18px; border-radius: 20px; border: none; 
             background-color: #8d6e63; color: white; font-size: 18px; font-weight: bold; 
@@ -87,22 +94,11 @@
         .btn-use:active { transform: scale(0.97); }
         .btn-use:disabled { background-color: #d7ccc8; cursor: not-allowed; }
         
-        /* 補充エリア */
-        .reload-box { 
-            margin-top: 20px; background: #fff; border-radius: 20px; 
-            padding: 15px; border: 1px solid #ffcdd2; display: none; 
-        }
-        .reload-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-        .btn-pay { 
-            width: 100%; padding: 14px; background-color: #ff0033; color: white; 
-            border: none; border-radius: 14px; font-weight: bold; font-size: 15px; 
-        }
-        
         .footer { font-size: 11px; color: #bcaaa4; text-align: center; margin-top: 20px; }
         .toast { 
             position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%); background: #3e2723; color: white; 
             padding: 12px 24px; border-radius: 50px; font-size: 13px; font-weight: bold; 
-            opacity: 0; transition: 0.3s; pointer-events: none; z-index: 100;
+            opacity: 0; transition: 0.3s; pointer-events: none; z-index: 1000;
         }
         .toast.on { opacity: 1; transform: translateX(-50%) translateY(-10px); }
         .reset-btn { margin-top: 50px; font-size: 11px; color: #d7ccc8; text-decoration: underline; background: none; border: none; }
@@ -112,6 +108,7 @@
 
     <div class="container">
         <div class="center">
+            <!-- イラストクリックエリア -->
             <label for="file-in" class="char-box">
                 <img id="char-view" class="char-img" style="display:none">
                 <div id="char-txt" class="char-msg">タップして<br>イラストを選択</div>
@@ -124,8 +121,12 @@
 
         <!-- タイマー表示 -->
         <div id="timer-box" class="timer-display">
-            <div class="timer-label">至福のマッサージ中...</div>
+            <div id="timer-status" class="timer-label">至福のマッサージ中...</div>
             <div id="timer-text" class="timer-time">10:00</div>
+            <div class="timer-controls">
+                <button id="btn-pause" class="btn-mini" onclick="togglePause()">一時停止</button>
+                <button class="btn-mini" onclick="stopTimer()">タイマー終了</button>
+            </div>
         </div>
 
         <div class="ticket">
@@ -146,12 +147,12 @@
             <p class="footer">お疲れ様ですも。ゆっくり休んでくださいね。</p>
         </div>
 
-        <div id="reload" class="reload-box">
-            <div class="reload-row">
+        <div id="reload" style="margin-top:20px; background:#fff; border-radius:20px; padding:15px; border:1px solid #ffcdd2; display:none;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
                 <span style="font-weight:bold">10枚補充する</span>
                 <span style="color:#d32f2f; font-weight:bold">1セット</span>
             </div>
-            <button class="btn-pay" onclick="doPay()">アプリで補充する</button>
+            <button style="width:100%; padding:14px; background:#ff0033; color:white; border:none; border-radius:14px; font-weight:bold;" onclick="doPay()">アプリで補充する</button>
         </div>
 
         <button class="reset-btn" onclick="doReset()">データをリセット</button>
@@ -160,11 +161,15 @@
     <div id="tst" class="toast"></div>
 
     <script>
-        const K_CNT = 'maru_v6_c'; 
-        const K_IMG = 'maru_v6_i';
-        const K_TMR = 'maru_v6_t'; // 終了時刻保存用
+        const K_CNT = 'maru_v7_c'; 
+        const K_IMG = 'maru_v7_i';
+        const K_TMR_LEFT = 'maru_v7_tl'; 
+        const K_TMR_PAUSED = 'maru_v7_tp';
+        const K_TMR_END = 'maru_v7_te';
+
         let rem = 10;
         let timerInterval = null;
+        let audioCtx = null;
 
         function startup() {
             const c = localStorage.getItem(K_CNT);
@@ -176,7 +181,7 @@
                 document.getElementById('char-txt').style.display = 'none';
             }
             draw();
-            checkTimer(); // ページを開いたときにタイマーが動いているか確認
+            syncTimer();
         }
 
         function draw() {
@@ -197,7 +202,7 @@
             const b = document.getElementById('btn');
             const r = document.getElementById('reload');
             if (rem <= 0) {
-                b.disabled = true; b.innerText = '終了しました';
+                b.disabled = true; b.innerText = 'チケット終了';
                 r.style.display = 'block';
             } else {
                 b.disabled = false; b.innerText = 'チケットを1枚使う (10分)';
@@ -208,43 +213,122 @@
         function doUse() {
             if (rem > 0) {
                 rem--; localStorage.setItem(K_CNT, rem);
-                
-                // 10分後の時刻を記録 (10 * 60 * 1000 ミリ秒)
-                const endTime = Date.now() + (10 * 60 * 1000);
-                localStorage.setItem(K_TMR, endTime);
-                
-                msg('マッサージ開始！10分測りますも！');
+                const tenMins = 10 * 60 * 1000;
+                startNewTimer(tenMins);
                 draw();
-                checkTimer();
+                msg('マッサージ開始！10分測りますも！');
             }
         }
 
-        function checkTimer() {
+        function startNewTimer(ms) {
+            localStorage.setItem(K_TMR_LEFT, ms);
+            localStorage.setItem(K_TMR_PAUSED, 'false');
+            localStorage.setItem(K_TMR_END, Date.now() + ms);
+            syncTimer();
+        }
+
+        function togglePause() {
+            const isPaused = localStorage.getItem(K_TMR_PAUSED) === 'true';
+            if (isPaused) {
+                // 再開
+                const left = parseInt(localStorage.getItem(K_TMR_LEFT));
+                localStorage.setItem(K_TMR_PAUSED, 'false');
+                localStorage.setItem(K_TMR_END, Date.now() + left);
+                document.getElementById('btn-pause').innerText = '一時停止';
+                msg('再開しました');
+            } else {
+                // 停止
+                const end = parseInt(localStorage.getItem(K_TMR_END));
+                const left = Math.max(0, end - Date.now());
+                localStorage.setItem(K_TMR_LEFT, left);
+                localStorage.setItem(K_TMR_PAUSED, 'true');
+                document.getElementById('btn-pause').innerText = '再開する';
+                msg('一時停止中');
+            }
+            syncTimer();
+        }
+
+        function syncTimer() {
             if (timerInterval) clearInterval(timerInterval);
             
-            const endTime = localStorage.getItem(K_TMR);
-            if (!endTime) return;
+            const leftData = localStorage.getItem(K_TMR_LEFT);
+            if (!leftData) return;
 
             const timerBox = document.getElementById('timer-box');
             const timerText = document.getElementById('timer-text');
+            const pauseBtn = document.getElementById('btn-pause');
+            
+            timerBox.style.display = 'block';
+            timerBox.classList.remove('timer-alert');
 
             timerInterval = setInterval(() => {
-                const now = Date.now();
-                const diff = endTime - now;
+                const isPaused = localStorage.getItem(K_TMR_PAUSED) === 'true';
+                let currentLeft = 0;
 
-                if (diff <= 0) {
-                    clearInterval(timerInterval);
-                    localStorage.removeItem(K_TMR);
-                    timerBox.style.display = 'none';
-                    msg('10分経ちました。お疲れ様でした！');
+                if (isPaused) {
+                    currentLeft = parseInt(localStorage.getItem(K_TMR_LEFT));
+                    pauseBtn.innerText = '再開する';
+                    document.getElementById('timer-status').innerText = '一時停止中';
+                } else {
+                    const end = parseInt(localStorage.getItem(K_TMR_END));
+                    currentLeft = end - Date.now();
+                    pauseBtn.innerText = '一時停止';
+                    document.getElementById('timer-status').innerText = '至福のマッサージ中...';
+                }
+
+                if (currentLeft <= 0) {
+                    finishTimer();
                     return;
                 }
 
-                timerBox.style.display = 'block';
-                const mins = Math.floor(diff / 1000 / 60);
-                const secs = Math.floor((diff / 1000) % 60);
+                const mins = Math.floor(currentLeft / 1000 / 60);
+                const secs = Math.floor((currentLeft / 1000) % 60);
                 timerText.innerText = `${mins}:${secs.toString().padStart(2, '0')}`;
-            }, 1000);
+            }, 200);
+        }
+
+        function finishTimer() {
+            clearInterval(timerInterval);
+            localStorage.removeItem(K_TMR_LEFT);
+            localStorage.removeItem(K_TMR_PAUSED);
+            localStorage.removeItem(K_TMR_END);
+            
+            const timerBox = document.getElementById('timer-box');
+            timerBox.classList.add('timer-alert');
+            document.getElementById('timer-text').innerText = "0:00";
+            document.getElementById('timer-status').innerText = "お疲れ様でした！";
+            
+            playAlarm();
+            msg('10分経ちました！');
+        }
+
+        function stopTimer() {
+            if (confirm('タイマーを終了しますか？')) {
+                clearInterval(timerInterval);
+                localStorage.removeItem(K_TMR_LEFT);
+                localStorage.removeItem(K_TMR_PAUSED);
+                localStorage.removeItem(K_TMR_END);
+                document.getElementById('timer-box').style.display = 'none';
+            }
+        }
+
+        function playAlarm() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            function beep(freq, duration) {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.frequency.value = freq;
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+                osc.start();
+                osc.stop(audioCtx.currentTime + duration);
+            }
+            // 3回鳴らす
+            beep(880, 0.2);
+            setTimeout(() => beep(880, 0.2), 300);
+            setTimeout(() => beep(880, 0.2), 600);
         }
 
         function hdlImg(input) {
@@ -295,7 +379,7 @@
         }
 
         function doReset() {
-            if (confirm('すべてのデータを消去しますか？')) {
+            if (confirm('イラストとタイマー、すべてのデータをリセットしますか？')) {
                 localStorage.clear(); location.reload();
             }
         }
