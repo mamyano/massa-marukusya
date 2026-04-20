@@ -101,14 +101,26 @@
             opacity: 0; transition: 0.3s; pointer-events: none; z-index: 1000;
         }
         .toast.on { opacity: 1; transform: translateX(-50%) translateY(-10px); }
-        .reset-btn { margin-top: 50px; font-size: 11px; color: #d7ccc8; text-decoration: underline; background: none; border: none; }
+        .reset-btn { margin-top: 30px; font-size: 11px; color: #d7ccc8; text-decoration: underline; background: none; border: none; padding: 10px; }
+        
+        .test-audio-btn {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: #fff;
+            border: 1px solid #e7d8c9;
+            border-radius: 15px;
+            font-size: 12px;
+            color: #8d6e63;
+            font-weight: bold;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
 
     <div class="container">
         <div class="center">
-            <!-- イラストクリックエリア -->
+            <!-- イラストエリア -->
             <label for="file-in" class="char-box">
                 <img id="char-view" class="char-img" style="display:none">
                 <div id="char-txt" class="char-msg">タップして<br>イラストを選択</div>
@@ -125,7 +137,7 @@
             <div id="timer-text" class="timer-time">10:00</div>
             <div class="timer-controls">
                 <button id="btn-pause" class="btn-mini" onclick="togglePause()">一時停止</button>
-                <button class="btn-mini" onclick="stopTimer()">タイマー終了</button>
+                <button class="btn-mini" onclick="stopTimer()">終了</button>
             </div>
         </div>
 
@@ -147,12 +159,9 @@
             <p class="footer">お疲れ様ですも。ゆっくり休んでくださいね。</p>
         </div>
 
-        <div id="reload" style="margin-top:20px; background:#fff; border-radius:20px; padding:15px; border:1px solid #ffcdd2; display:none;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-                <span style="font-weight:bold">10枚補充する</span>
-                <span style="color:#d32f2f; font-weight:bold">1セット</span>
-            </div>
-            <button style="width:100%; padding:14px; background:#ff0033; color:white; border:none; border-radius:14px; font-weight:bold;" onclick="doPay()">アプリで補充する</button>
+        <!-- 鳴き声テストボタン -->
+        <div class="center">
+            <button class="test-audio-btn" onclick="testAudio()">🐄 鳴き声をテストする</button>
         </div>
 
         <button class="reset-btn" onclick="doReset()">データをリセット</button>
@@ -161,15 +170,19 @@
     <div id="tst" class="toast"></div>
 
     <script>
-        const K_CNT = 'maru_v7_c'; 
-        const K_IMG = 'maru_v7_i';
-        const K_TMR_LEFT = 'maru_v7_tl'; 
-        const K_TMR_PAUSED = 'maru_v7_tp';
-        const K_TMR_END = 'maru_v7_te';
+        const K_CNT = 'maru_v12_c'; 
+        const K_IMG = 'maru_v12_i';
+        const K_TMR_LEFT = 'maru_v12_tl'; 
+        const K_TMR_PAUSED = 'maru_v12_tp';
+        const K_TMR_END = 'maru_v12_te';
 
         let rem = 10;
         let timerInterval = null;
-        let audioCtx = null;
+        let wakeLock = null;
+
+        // 音声オブジェクトの作成
+        const audioBtn = new Audio('button.m4a');
+        const audioAlarm = new Audio('alarm.m4a');
 
         function startup() {
             const c = localStorage.getItem(K_CNT);
@@ -182,6 +195,25 @@
             }
             draw();
             syncTimer();
+            
+            if ("Notification" in window) {
+                Notification.requestPermission();
+            }
+        }
+
+        async function requestWakeLock() {
+            try {
+                if ('wakeLock' in navigator) {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                }
+            } catch (err) {}
+        }
+
+        function releaseWakeLock() {
+            if (wakeLock !== null) {
+                wakeLock.release();
+                wakeLock = null;
+            }
         }
 
         function draw() {
@@ -200,23 +232,31 @@
                 g.appendChild(s);
             }
             const b = document.getElementById('btn');
-            const r = document.getElementById('reload');
             if (rem <= 0) {
                 b.disabled = true; b.innerText = 'チケット終了';
-                r.style.display = 'block';
             } else {
                 b.disabled = false; b.innerText = 'チケットを1枚使う (10分)';
-                r.style.display = 'none';
             }
         }
 
+        // 音声をiPhoneで鳴らせるように初期化する
+        function initAudioOnTouch() {
+            audioBtn.play().then(() => { audioBtn.pause(); audioBtn.currentTime = 0; });
+            audioAlarm.play().then(() => { audioAlarm.pause(); audioAlarm.currentTime = 0; });
+        }
+
         function doUse() {
+            initAudioOnTouch();
             if (rem > 0) {
+                // ボタンの音を鳴らす
+                audioBtn.play();
+                
+                requestWakeLock();
                 rem--; localStorage.setItem(K_CNT, rem);
                 const tenMins = 10 * 60 * 1000;
                 startNewTimer(tenMins);
                 draw();
-                msg('マッサージ開始！10分測りますも！');
+                msg('マッサージ開始だも！10分後に鳴くも！');
             }
         }
 
@@ -228,16 +268,17 @@
         }
 
         function togglePause() {
+            initAudioOnTouch();
             const isPaused = localStorage.getItem(K_TMR_PAUSED) === 'true';
             if (isPaused) {
-                // 再開
+                requestWakeLock();
                 const left = parseInt(localStorage.getItem(K_TMR_LEFT));
                 localStorage.setItem(K_TMR_PAUSED, 'false');
                 localStorage.setItem(K_TMR_END, Date.now() + left);
                 document.getElementById('btn-pause').innerText = '一時停止';
                 msg('再開しました');
             } else {
-                // 停止
+                releaseWakeLock();
                 const end = parseInt(localStorage.getItem(K_TMR_END));
                 const left = Math.max(0, end - Date.now());
                 localStorage.setItem(K_TMR_LEFT, left);
@@ -250,7 +291,6 @@
 
         function syncTimer() {
             if (timerInterval) clearInterval(timerInterval);
-            
             const leftData = localStorage.getItem(K_TMR_LEFT);
             if (!leftData) return;
 
@@ -284,7 +324,7 @@
                 const mins = Math.floor(currentLeft / 1000 / 60);
                 const secs = Math.floor((currentLeft / 1000) % 60);
                 timerText.innerText = `${mins}:${secs.toString().padStart(2, '0')}`;
-            }, 200);
+            }, 500);
         }
 
         function finishTimer() {
@@ -292,43 +332,42 @@
             localStorage.removeItem(K_TMR_LEFT);
             localStorage.removeItem(K_TMR_PAUSED);
             localStorage.removeItem(K_TMR_END);
+            releaseWakeLock();
             
             const timerBox = document.getElementById('timer-box');
             timerBox.classList.add('timer-alert');
             document.getElementById('timer-text').innerText = "0:00";
-            document.getElementById('timer-status').innerText = "お疲れ様でした！";
+            document.getElementById('timer-status').innerText = "終了だも！お疲れ様！";
             
-            playAlarm();
-            msg('10分経ちました！');
+            // アラーム音を鳴らす
+            audioAlarm.play();
+            
+            if ("Notification" in window && Notification.permission === "granted") {
+                new Notification("マッサージ終了だも！", { body: "お疲れ様です！" });
+            }
+            msg('10分経ちました！モー！');
+        }
+
+        function testAudio() {
+            initAudioOnTouch();
+            msg('音声をテストします...');
+            audioBtn.play();
+            setTimeout(() => {
+                audioAlarm.play();
+            }, 2000);
         }
 
         function stopTimer() {
-            if (confirm('タイマーを終了しますか？')) {
+            if (confirm('タイマーを強制終了しますか？')) {
                 clearInterval(timerInterval);
                 localStorage.removeItem(K_TMR_LEFT);
                 localStorage.removeItem(K_TMR_PAUSED);
                 localStorage.removeItem(K_TMR_END);
+                releaseWakeLock();
                 document.getElementById('timer-box').style.display = 'none';
+                audioAlarm.pause();
+                audioAlarm.currentTime = 0;
             }
-        }
-
-        function playAlarm() {
-            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            function beep(freq, duration) {
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
-                osc.connect(gain);
-                gain.connect(audioCtx.destination);
-                osc.frequency.value = freq;
-                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
-                osc.start();
-                osc.stop(audioCtx.currentTime + duration);
-            }
-            // 3回鳴らす
-            beep(880, 0.2);
-            setTimeout(() => beep(880, 0.2), 300);
-            setTimeout(() => beep(880, 0.2), 600);
         }
 
         function hdlImg(input) {
@@ -360,18 +399,6 @@
             reader.readAsDataURL(f);
         }
 
-        function doPay() {
-            msg('アプリを起動します');
-            const p = ['p','a','y','p','a','y',':','/','/'].join('');
-            window.location.href = p;
-            setTimeout(() => {
-                if (confirm('補充が完了しましたか？')) {
-                    rem = 10; localStorage.setItem(K_CNT, rem);
-                    draw(); msg('10枚補充しました');
-                }
-            }, 2500);
-        }
-
         function msg(t) {
             const el = document.getElementById('tst');
             el.innerText = t; el.classList.add('on');
@@ -379,7 +406,7 @@
         }
 
         function doReset() {
-            if (confirm('イラストとタイマー、すべてのデータをリセットしますか？')) {
+            if (confirm('リセットしますか？')) {
                 localStorage.clear(); location.reload();
             }
         }
@@ -388,4 +415,3 @@
     </script>
 </body>
 </html>
-
