@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -116,7 +117,7 @@
         }
     </style>
 </head>
-<body>
+<body onclick="unlockAudio()"> <!-- 画面のどこかを触った瞬間に音声を解禁 -->
 
     <div class="container">
         <div class="center">
@@ -170,19 +171,24 @@
     <div id="tst" class="toast"></div>
 
     <script>
-        const K_CNT = 'maru_v12_c'; 
-        const K_IMG = 'maru_v12_i';
-        const K_TMR_LEFT = 'maru_v12_tl'; 
-        const K_TMR_PAUSED = 'maru_v12_tp';
-        const K_TMR_END = 'maru_v12_te';
+        const K_CNT = 'maru_v13_c'; 
+        const K_IMG = 'maru_v13_i';
+        const K_TMR_LEFT = 'maru_v13_tl'; 
+        const K_TMR_PAUSED = 'maru_v13_tp';
+        const K_TMR_END = 'maru_v13_te';
 
         let rem = 10;
         let timerInterval = null;
         let wakeLock = null;
+        let audioUnlocked = false;
 
-        // 音声オブジェクトの作成
+        // 音声オブジェクトの作成（あえて関数外で作る）
         const audioBtn = new Audio('button.m4a');
         const audioAlarm = new Audio('alarm.m4a');
+
+        // エラーチェック
+        audioBtn.onerror = () => { if(audioBtn.src.includes('m4a')) msg("【エラー】button.m4aが見つかりません"); };
+        audioAlarm.onerror = () => { if(audioAlarm.src.includes('m4a')) msg("【エラー】alarm.m4aが見つかりません"); };
 
         function startup() {
             const c = localStorage.getItem(K_CNT);
@@ -199,6 +205,17 @@
             if ("Notification" in window) {
                 Notification.requestPermission();
             }
+        }
+
+        // iPhoneのオーディオ制限を解除する「儀式」
+        function unlockAudio() {
+            if (audioUnlocked) return;
+            audioBtn.load();
+            audioAlarm.load();
+            // 無音再生で解禁
+            audioBtn.play().then(() => { audioBtn.pause(); audioBtn.currentTime = 0; }).catch(e=>{});
+            audioAlarm.play().then(() => { audioAlarm.pause(); audioAlarm.currentTime = 0; }).catch(e=>{});
+            audioUnlocked = true;
         }
 
         async function requestWakeLock() {
@@ -239,17 +256,14 @@
             }
         }
 
-        // 音声をiPhoneで鳴らせるように初期化する
-        function initAudioOnTouch() {
-            audioBtn.play().then(() => { audioBtn.pause(); audioBtn.currentTime = 0; });
-            audioAlarm.play().then(() => { audioAlarm.pause(); audioAlarm.currentTime = 0; });
-        }
-
         function doUse() {
-            initAudioOnTouch();
+            unlockAudio(); // 念のためここでも解禁
             if (rem > 0) {
-                // ボタンの音を鳴らす
-                audioBtn.play();
+                // ボタンの音を即座に鳴らす
+                audioBtn.currentTime = 0;
+                audioBtn.play().catch(e => {
+                    msg("音声再生エラー: " + e.message);
+                });
                 
                 requestWakeLock();
                 rem--; localStorage.setItem(K_CNT, rem);
@@ -268,7 +282,7 @@
         }
 
         function togglePause() {
-            initAudioOnTouch();
+            unlockAudio();
             const isPaused = localStorage.getItem(K_TMR_PAUSED) === 'true';
             if (isPaused) {
                 requestWakeLock();
@@ -340,6 +354,7 @@
             document.getElementById('timer-status').innerText = "終了だも！お疲れ様！";
             
             // アラーム音を鳴らす
+            audioAlarm.currentTime = 0;
             audioAlarm.play();
             
             if ("Notification" in window && Notification.permission === "granted") {
@@ -349,11 +364,13 @@
         }
 
         function testAudio() {
-            initAudioOnTouch();
+            unlockAudio();
             msg('音声をテストします...');
-            audioBtn.play();
+            audioBtn.currentTime = 0;
+            audioBtn.play().catch(e => msg("ボタン音再生失敗"));
             setTimeout(() => {
-                audioAlarm.play();
+                audioAlarm.currentTime = 0;
+                audioAlarm.play().catch(e => msg("アラーム音再生失敗"));
             }, 2000);
         }
 
